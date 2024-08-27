@@ -1,0 +1,127 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import './App.css';
+
+const generateTimeSlots = (startHour, endHour, intervalMinutes) => {
+    const slots = [];
+    let startTime = new Date();
+    startTime.setHours(startHour, 0, 0, 0);
+
+    const endTime = new Date();
+    endTime.setHours(endHour, 0, 0, 0);
+
+    while (startTime <= endTime) {
+        const hours = startTime.getHours().toString().padStart(2, '0');
+        const minutes = startTime.getMinutes().toString().padStart(2, '0');
+        slots.push(`${hours}:${minutes}`);
+        startTime.setMinutes(startTime.getMinutes() + intervalMinutes);
+    }
+
+    return slots;
+};
+
+function App() {
+    const [fecha, setFecha] = useState('');
+    const [hora, setHora] = useState('');
+    const [tipoVehiculo, setTipoVehiculo] = useState('');
+    const [dni, setDni] = useState('');
+    const [patente, setPatente] = useState('');
+    const [modelo, setModelo] = useState('');
+    const [telefono, setTelefono] = useState('');
+    const [mensaje, setMensaje] = useState('');
+    const [horariosDisponibles, setHorariosDisponibles] = useState([]);
+
+    // Genera intervalos de tiempo cada 30 minutos entre las 07:00 y las 20:00
+    useEffect(() => {
+        if (fecha) {
+            setHorariosDisponibles(generateTimeSlots(7, 20, 30));
+        }
+    }, [fecha]);
+
+    // Establece la fecha mínima como la fecha actual
+    const minFecha = new Date().toISOString().split('T')[0];
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        try {
+            const response = await axios.post('http://localhost:3000/api/solicitar-turno', {
+                fecha,
+                hora,
+                tipoVehiculo,
+                dni,
+                patente,
+                modelo,
+                telefono
+            });
+            const mensaje = response.data.mensaje;
+            const confirmarOtroTurno = window.confirm(`${mensaje}\n\n¿Quieres solicitar otro turno?`);
+            if (!confirmarOtroTurno) {
+                window.alert(`¡Muchas gracias! Tu turno es para el ${fecha} a las ${hora}.`);
+            }
+            // Recarga la página en ambos casos
+            window.location.reload();
+        } catch (error) {
+            if (error.response) {
+                setMensaje(error.response.data.error);
+            } else {
+                setMensaje('Error en la solicitud.');
+            }
+        }
+    };
+
+    return (
+        <div className="App">
+            <h1>Solicitar Turno</h1>
+            <form onSubmit={handleSubmit}>
+                <label>
+                    Fecha:
+                    <input
+                        type="date"
+                        value={fecha}
+                        onChange={(e) => setFecha(e.target.value)}
+                        min={minFecha}
+                        required
+                    />
+                </label>
+                <label>
+                    Hora:
+                    <select value={hora} onChange={(e) => setHora(e.target.value)} required>
+                        <option value="">Seleccione</option>
+                        {horariosDisponibles.map((slot, index) => (
+                            <option key={index} value={slot}>{slot}</option>
+                        ))}
+                    </select>
+                </label>
+                <label>
+                    Tipo de Vehículo:
+                    <select value={tipoVehiculo} onChange={(e) => setTipoVehiculo(e.target.value)} required>
+                        <option value="">Seleccione</option>
+                        <option value="auto">Auto</option>
+                        <option value="moto">Moto</option>
+                        <option value="camion">Camión</option>
+                    </select>
+                </label>
+                <label>
+                    DNI:
+                    <input type="text" value={dni} onChange={(e) => setDni(e.target.value)} required />
+                </label>
+                <label>
+                    Patente:
+                    <input type="text" value={patente} onChange={(e) => setPatente(e.target.value)} required />
+                </label>
+                <label>
+                    Modelo:
+                    <input type="text" value={modelo} onChange={(e) => setModelo(e.target.value)} required />
+                </label>
+                <label>
+                    Teléfono:
+                    <input type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)} required />
+                </label>
+                <button type="submit">Solicitar Turno</button>
+            </form>
+            {mensaje && <p>{mensaje}</p>}
+        </div>
+    );
+}
+
+export default App;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import axios from 'axios';
 import './App.css';
 
@@ -25,11 +25,15 @@ function App() {
     const [hora, setHora] = useState('');
     const [tipoVehiculo, setTipoVehiculo] = useState('');
     const [dni, setDni] = useState('');
+    const [nombre, setNombre] = useState('');
     const [patente, setPatente] = useState('');
     const [modelo, setModelo] = useState('');
     const [telefono, setTelefono] = useState('');
     const [mensaje, setMensaje] = useState('');
     const [horariosDisponibles, setHorariosDisponibles] = useState([]);
+    const [paginaConfirmacion, setPaginaConfirmacion] = useState(false); 
+    const [precio,setPrecio] =useState(0)
+    const [requisitos,setRequisitos] =useState('')
 
     // Genera intervalos de tiempo cada 30 minutos entre las 07:00 y las 20:00
     useEffect(() => {
@@ -44,23 +48,19 @@ function App() {
     const handleSubmit = async (event) => {
         event.preventDefault();
         try {
-            const response = await axios.post('http://localhost:3000/api/solicitar-turno', {
+            const response = await axios.post('http://localhost:3000/api/check-turno', {
                 fecha,
-                hora,
-                tipoVehiculo,
-                dni,
-                patente,
-                modelo,
-                telefono
-            });
-            const mensaje = response.data.mensaje;
-            const confirmarOtroTurno = window.confirm(`${mensaje}\n\n¿Quieres solicitar otro turno?`);
-            if (!confirmarOtroTurno) {
-                window.alert(`¡Muchas gracias! Tu turno es para el ${fecha} a las ${hora}.`);
-            }
-            // Recarga la página en ambos casos
-            window.location.reload();
+                hora
+            }); 
+            const revision=await axios.get('http://localhost:3000/api/get-revision', {
+                params:{tipoVehiculo:tipoVehiculo}
+            }); 
+            setPrecio(revision.data.precio)
+            setRequisitos(revision.data.requisitos)
+            const mensaje = response.data.mensaje;         
+            setPaginaConfirmacion(true);
         } catch (error) {
+            console.log(error.response)
             if (error.response) {
                 setMensaje(error.response.data.error);
             } else {
@@ -68,6 +68,56 @@ function App() {
             }
         }
     };
+
+
+
+    const handleConfirmar = async (event) => {
+        event.preventDefault()
+        const response = await axios.post('http://localhost:3000/api/solicitar-turno', {
+            fecha,
+            hora,
+            tipoVehiculo,
+            dni,
+            nombre,
+            patente,
+            modelo,
+            telefono
+        });
+
+        const confirmarOtroTurno = window.confirm(`¿Quieres solicitar otro turno?`);
+        if (!confirmarOtroTurno) {
+            window.alert(`¡Muchas gracias! Tu turno es para el ${fecha} a las ${hora}.`);
+            // Aquí puedes resetear el formulario o redirigir a otra página
+            window.location.reload();
+        } else {
+            // Resetear el estado para volver al formulario inicial
+            setPaginaConfirmacion(false);
+            setFecha('');
+            setHora('');
+            setTipoVehiculo('');
+            setDni('');
+            setNombre('')
+            setPatente('');
+            setModelo('');
+            setTelefono('');
+            setMensaje('');
+            useState(0);
+            useState('');
+        }
+    };
+
+    if (paginaConfirmacion) {
+        return (
+            <div className="App">
+                <h1>Confirmación</h1>
+                <p>Tu turno está programado para el {fecha} a las {hora}.</p>
+                <p>El costo del servicio será de ${precio}.</p>
+                <p>Recuerde de traer para la revision {requisitos}.</p>
+                <button onClick={handleConfirmar}>Aceptar</button>
+                <button onClick={() => setPaginaConfirmacion(false)}>Cancelar</button>
+            </div>
+        );
+    }
 
     return (
         <div className="App">
@@ -96,14 +146,20 @@ function App() {
                     Tipo de Vehículo:
                     <select value={tipoVehiculo} onChange={(e) => setTipoVehiculo(e.target.value)} required>
                         <option value="">Seleccione</option>
-                        <option value="auto">Auto</option>
-                        <option value="moto">Moto</option>
-                        <option value="camion">Camión</option>
+                        <option value="Auto">Auto</option>
+                        <option value="Moto">Moto</option>
+                        <option value="Camion">Camión</option>
                     </select>
                 </label>
                 <label>
+                
                     DNI:
                     <input type="text" value={dni} onChange={(e) => setDni(e.target.value)} required />
+                </label>
+                
+                <label>
+                    Nombre completo:
+                    <input type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} required />
                 </label>
                 <label>
                     Patente:
@@ -115,7 +171,7 @@ function App() {
                 </label>
                 <label>
                     Teléfono:
-                    <input type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)} required />
+                    <input type="text" value={telefono} onChange={(e) => setTelefono(e.target.value)} minLength={10} maxLength={10} required />
                 </label>
                 <button type="submit">Solicitar Turno</button>
             </form>

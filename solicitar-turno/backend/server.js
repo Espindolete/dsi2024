@@ -97,7 +97,7 @@ app.post('/api/solicitar-turno', async (req, res) => {
 
 app.get('/api/testing',async(req,res)=>{
 
-    res.end("Hello")
+    res.status(200).json({message:"Hello World"})
 })
 
 // Iniciar el servidor

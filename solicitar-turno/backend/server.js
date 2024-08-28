@@ -94,6 +94,12 @@ app.post('/api/solicitar-turno', async (req, res) => {
     }
 });
 
+
+app.get('/api/testing',async(req,res)=>{
+
+    res.end("Hello")
+})
+
 // Iniciar el servidor
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);

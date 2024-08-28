@@ -48,11 +48,11 @@ function App() {
     const handleSubmit = async (event) => {
         event.preventDefault();
         try {
-            const response = await axios.post('backend-two-swart-79.vercel.app/api/check-turno', {
+            const response = await axios.post('dsibackend-production.up.railway.app/api/check-turno', {
                 fecha,
                 hora
             }); 
-            const revision=await axios.get('backend-two-swart-79.vercel.app/api/get-revision', {
+            const revision=await axios.get('dsibackend-production.up.railway.app/api/get-revision', {
                 params:{tipoVehiculo:tipoVehiculo}
             }); 
             setPrecio(revision.data.precio)
@@ -73,7 +73,7 @@ function App() {
 
     const handleConfirmar = async (event) => {
         event.preventDefault()
-        const response = await axios.post('backend-two-swart-79.vercel.app/api/solicitar-turno', {
+        const response = await axios.post('dsibackend-production.up.railway.app/api/solicitar-turno', {
             fecha,
             hora,
             tipoVehiculo,
